@@ -1,0 +1,78 @@
+# ---------------------------------------------------------------
+# SafeWord user profile - created once during enrolment (Phase 0).
+# ---------------------------------------------------------------
+
+owner_name: "Rebecca Saxena"
+
+# S2 sender gate: EXACTLY five addresses. Mail from anything else is
+# discarded before a single model is loaded.
+emergency_slots:
+  - address: "your.work.email@example.com"
+    slot: 1
+    slot_class: owner_secondary
+    label: "Work mail"
+  - address: "your.backup.email@example.com"
+    slot: 2
+    slot_class: owner_secondary
+    label: "Backup personal mail"
+  - address: "family.member@example.com"
+    slot: 3
+    slot_class: trusted_contact
+    label: "Family"
+  - address: "close.friend@example.com"
+    slot: 4
+    slot_class: trusted_contact
+    label: "Close friend"
+  - address: "second.friend@example.com"
+    slot: 5
+    slot_class: trusted_contact
+    label: "Second friend"
+
+# 0.3 protected inventory - the default action set when the user names
+# no specific target.
+protected_services:
+  messaging: [telegram, whatsapp]
+  social: [instagram]
+  bank: [demobank]
+  email: [gmail]
+
+# 0.4 challenge questions. In production the plaintext answers are
+# discarded after embedding; kept here in v0 so the rule-based baseline
+# runs before the models exist.
+challenges:
+  - id: c1
+    question: "What was your grandmother's dog called?"
+    answer: "my grandmother's dog was called Bruno"
+  - id: c2
+    question: "Which city were you in when you opened your first bank account?"
+    answer: "I opened it in Ghaziabad"
+  - id: c3
+    question: "What was the name of your first school?"
+    answer: "St Mary's Convent School"
+
+# 0.5 writing samples for the stylometry model (M4b). In production this is
+# 50-100 of the owner's real messages. With this list empty the stylometry
+# signal is skipped entirely rather than guessed - an absent signal is
+# honest, a fabricated one is not.
+writing_samples:
+  - "hey can you send me the notes from today's class, i missed the last bit"
+  - "running late, stuck at the metro, start without me"
+  - "ok so i tried the thing you said and it worked, thanks a lot"
+  - "did you get my message? phone was on silent all morning"
+  - "lets meet around 6 near the usual place, i'll book a table"
+  # Stressed-register samples. Without these the model learns only the calm
+  # voice and then scores a genuine panic message as an imposter - the exact
+  # failure this project set out to avoid.
+  - "where are you?? been calling for 20 mins, pick up please"
+  - "my wallet is missing i think it fell out on the bus, checking now"
+  - "please call me back its urgent, something happened"
+
+# 0.7 policy
+policy:
+  grace_window_seconds: 60
+  rate_limit_per_slot_per_hour: 3
+  proxy_tier_cap: 1
+  tier2_trust_threshold: 0.70
+  tier1_trust_threshold: 0.45
+  max_challenge_rounds: 2
+  semantic_pass_threshold: 0.40

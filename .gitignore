@@ -1,0 +1,10 @@
+.env
+venv/
+models/
+__pycache__/
+*.pyc
+logs/*.jsonl
+data/*.json
+.DS_Store
+.pytest_cache/
+corpus/raw/

@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aravali Bank — sandbox</title>
+<style>
+  :root{
+    --paper:#EDF0F2; --panel:#F7F9FA; --ink:#1B2430; --muted:#63727F;
+    --rule:#C9D3DA; --stamp:#B3271E; --credit:#2F6B4F; --live:#1F7A8C;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);
+       font-family:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif;
+       font-size:16px;line-height:1.5}
+  .num{font-family:ui-monospace,"SF Mono",Menlo,monospace;font-variant-numeric:tabular-nums}
+  header{border-bottom:2px solid var(--ink);padding:22px 28px;display:flex;
+         justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:10px}
+  .mark{font-size:26px;letter-spacing:.01em}
+  .mark b{font-weight:600}
+  .sandbox{font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:11px;
+           letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+  main{max-width:940px;margin:0 auto;padding:28px}
+  .grid{display:grid;grid-template-columns:1.15fr 1fr;gap:24px}
+  @media(max-width:760px){.grid{grid-template-columns:1fr}}
+  section{background:var(--panel);border:1px solid var(--rule);padding:20px 22px;position:relative}
+  h2{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);
+     font-family:ui-monospace,"SF Mono",Menlo,monospace;font-weight:400;margin:0 0 16px}
+  .balance{font-size:40px;letter-spacing:-.01em}
+  .acct{color:var(--muted);font-size:13px;margin-top:4px}
+  .row{display:flex;justify-content:space-between;gap:14px;padding:10px 0;
+       border-bottom:1px solid var(--rule)}
+  .row:last-child{border-bottom:0}
+  .dev{font-size:15px}
+  .meta{color:var(--muted);font-size:12px;margin-top:2px}
+  .badge{font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:10px;
+         letter-spacing:.1em;text-transform:uppercase;color:var(--live);
+         border:1px solid var(--live);padding:1px 6px;align-self:center}
+  .empty{color:var(--muted);font-style:italic;padding:18px 0;text-align:center}
+  .credit{color:var(--credit)}
+  .stamp{position:absolute;top:0px;right:24px;transform:rotate(-11deg);
+         border:3px solid var(--stamp);color:var(--stamp);padding:6px 14px;
+         font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:15px;
+         letter-spacing:.22em;text-transform:uppercase;opacity:.88;pointer-events:none}
+  .log{list-style:none;margin:0;padding:0;font-family:ui-monospace,"SF Mono",Menlo,monospace;
+       font-size:12px;color:var(--muted)}
+  .log li{padding:5px 0;border-bottom:1px dotted var(--rule)}
+  footer{max-width:940px;margin:0 auto;padding:8px 28px 40px;color:var(--muted);font-size:12px}
+  a{color:var(--ink)}
+</style>
+</head>
+<body>
+<header>
+  <div class="mark">Aravali <b>Bank</b></div>
+  <div class="sandbox">Sandbox instance · no real money · port 5001</div>
+</header>
+
+<main>
+  <div class="grid">
+    <section>
+      <h2>Account</h2>
+      <div id="stamp-slot"></div>
+      <div class="balance num" id="balance">—</div>
+      <div class="acct num" id="acct"></div>
+      <h2 style="margin-top:26px">Recent activity</h2>
+      <div id="txns"></div>
+    </section>
+
+    <section>
+      <h2>Active sessions</h2>
+      <div id="sessions"></div>
+      <h2 style="margin-top:26px">Security log</h2>
+      <ul class="log" id="events"><li>Waiting…</li></ul>
+    </section>
+  </div>
+</main>
+
+<footer>
+  Reset the sandbox: <a href="/api/reset">/api/reset</a> · State as JSON: <a href="/api/state">/api/state</a>
+</footer>
+
+<script>
+const inr = n => "₹" + n.toLocaleString("en-IN", {minimumFractionDigits:2, maximumFractionDigits:2});
+
+function render(s){
+  document.getElementById("balance").textContent = inr(s.balance);
+  document.getElementById("acct").textContent = s.account_no + (s.cards_blocked ? " · cards blocked" : "");
+
+  document.getElementById("stamp-slot").innerHTML =
+    s.frozen ? '<div class="stamp">Frozen</div>' : '';
+
+  document.getElementById("txns").innerHTML = s.transactions.map(t =>
+    `<div class="row"><div class="dev">${t.desc}<div class="meta">${t.when}</div></div>
+     <div class="num ${t.amount>0?'credit':''}">${t.amount>0?'+':''}${inr(t.amount)}</div></div>`
+  ).join("");
+
+  const box = document.getElementById("sessions");
+  box.innerHTML = s.sessions.length
+    ? s.sessions.map(x =>
+        `<div class="row"><div><div class="dev">${x.device}</div>
+         <div class="meta num">${x.ip} · since ${x.since}</div></div>
+         ${x.current ? '<span class="badge">This device</span>' : ''}</div>`).join("")
+    : '<div class="empty">No active sessions. Every device has been signed out.</div>';
+
+  document.getElementById("events").innerHTML = s.events.length
+    ? s.events.map(e => `<li>${e.at}  ${e.text}</li>`).join("")
+    : "<li>Nothing yet.</li>";
+}
+
+async function tick(){
+  try{ render(await (await fetch("/api/state")).json()); }catch(e){}
+}
+tick(); setInterval(tick, 1500);
+</script>
+</body>
+</html>
