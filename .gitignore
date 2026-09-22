@@ -8,3 +8,4 @@ data/*.json
 .DS_Store
 .pytest_cache/
 corpus/raw/
+config/profile.local.yaml
