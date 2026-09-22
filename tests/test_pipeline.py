@@ -2,8 +2,6 @@
 import sys
 from pathlib import Path
 
-import pytest
-
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from safeword.config import load_profile
@@ -46,15 +44,15 @@ def test_cleaner_strips_quotes_and_signature():
 # ---------------------------------------------------------------------------
 # M1 intent
 # ---------------------------------------------------------------------------
-# KNOWN REGRESSION. The round-4 hard negatives ("lost my keys", "lost my train
-# of thought", "lost my wallet not my phone") cut the false trigger rate from
-# 0.372 to 0.166, but the model over-generalised: bare "I lost my phone" with
-# no further context is now read as out_of_scope. The RULE baseline gets this
-# right, which is why the rules version below is a hard assertion.
-# Fix is more minimal-phrasing lost_uncertain seeds, not a weaker assertion.
-@pytest.mark.xfail(reason="model regression from hard-negative round 4",
-                   strict=False)
 def test_lost_and_stolen_are_different_intents():
+    """
+    Formerly an xfail. The round-4 hard negatives ("lost my keys", "lost my
+    train of thought") cut the false trigger rate from 0.372 to 0.166, but the
+    model over-generalised and read bare "I lost my phone" as out_of_scope.
+    Round 5 added ten minimal-phrasing lost_uncertain seeds, which fixed it.
+    If this fails again, a later corpus round has reintroduced the same
+    over-generalisation - check the hard-negative balance first.
+    """
     assert understand("I lost my phone", INV).intent == "lost_uncertain"
     assert understand("my phone was stolen", INV).intent == "stolen_confirmed"
 
